@@ -12,6 +12,24 @@
 
 set -o errexit -o nounset -o pipefail
 
+# Ensure zsh is installed. Coder workspace images are Ubuntu-based and
+# ship with bash only, so a fresh workspace needs zsh pulled in.
+if ! command -v zsh >/dev/null 2>&1; then
+  echo >&2 "zsh not found; installing via apt..."
+  sudo apt-get update
+  sudo apt-get install -y zsh
+fi
+
+# Make zsh the default login shell so it persists across reconnects.
+# Use sudo because Coder workspace users often have no password set,
+# which would otherwise cause chsh to prompt or fail.
+ZSH_PATH="$(command -v zsh)"
+CURRENT_SHELL="$(getent passwd "${USER}" | cut -d: -f7)"
+if [[ ${CURRENT_SHELL} != "${ZSH_PATH}" ]]; then
+  echo >&2 "Changing default shell for ${USER} to ${ZSH_PATH}..."
+  sudo chsh -s "${ZSH_PATH}" "${USER}"
+fi
+
 REPO_DIR="${HOME}/code/cgrindel/dev-machine"
 REPO_URL="git@github.com:cgrindel/dev-machine.git"
 
